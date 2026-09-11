@@ -754,6 +754,18 @@ body.ad-on .wa{inset-block-end:88px}
   .showcase__sticky{position:static; height:auto; padding-block:4rem}
 }
 .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap}
+
+/* ═══════════════════════════════════════════════════════════
+   light 3D tilt — subtle depth on pointer devices only
+   ═══════════════════════════════════════════════════════════ */
+.tilt{transform-style:preserve-3d}
+.tile.tilt,.cell.tilt,.map.tilt{transition:border-color .35s, box-shadow .35s, background-color .3s, transform .12s linear}
+.tile.tilt.tilt--settle,.cell.tilt.tilt--settle,.map.tilt.tilt--settle{transition:border-color .35s, box-shadow .35s, background-color .3s, transform .5s cubic-bezier(.22,1,.36,1)}
+.cell.tilt{transform:perspective(900px) rotateX(0) rotateY(0)}
+.cell.tilt .cell__top,.cell.tilt h3,.cell.tilt p{transform:translateZ(18px)}
+@media (prefers-reduced-motion:reduce), (hover:none), (pointer:coarse){
+  .tile.tilt,.cell.tilt,.map.tilt{transform:none !important}
+}
 </style>
 </head>
 <body>
@@ -1134,10 +1146,6 @@ body.ad-on .wa{inset-block-end:88px}
       <span class="mono" id="mCat" style="color:var(--primary)"></span>
       <h3 id="mTitle"></h3>
       <p id="mDesc"></p>
-      <dl class="mfacts">
-        <div><dt class="mono" data-i18n="pj.loc">الموقع</dt><dd id="mLoc"></dd></div>
-        <div><dt class="mono" data-i18n="pj.year">السنة</dt><dd id="mYear"></dd></div>
-      </dl>
       <div>
         <span class="mono" style="display:block; margin-bottom:.5rem" data-i18n="pj.services">الخدمات المنفّذة</span>
         <div class="chips" id="mTags"></div>
@@ -1154,49 +1162,41 @@ var PROJECTS = [
   {id:"p1", cls:"pj--a", img:"p-portal.jpg",
    ar:{t:"هيكل مستودع صناعي", c:"هياكل إنشائية", d:"هيكل حديدي واسع البحر مع جوائز رئيسية ومرابط سقف، منفّذ ومركّب بالكامل."},
    en:{t:"Industrial warehouse frame", c:"Structural steel", d:"Wide-span steel frame with primary beams and roof purlins, fabricated and erected in full."},
-   loc:"[الموقع]", locEn:"[Location]", year:"[السنة]", yearEn:"[Year]",
    sv:["تصنيع","تركيب","هندسة"], svEn:["Fabrication","Erection","Engineering"]},
 
   {id:"p2", cls:"pj--b", img:"p-sunset.jpg",
    ar:{t:"تركيب في الموقع", c:"تركيب الهياكل", d:"رفع وتثبيت الإطارات الرئيسية بمعدات رفع وفرق تركيب معتمدة."},
    en:{t:"On-site erection", c:"Steel erection", d:"Lifting and fixing of main portal frames with certified lifting gear and crews."},
-   loc:"[الموقع]", locEn:"[Location]", year:"[السنة]", yearEn:"[Year]",
    sv:["تركيب","سلامة"], svEn:["Erection","Safety"]},
 
   {id:"p3", cls:"pj--c", img:"p-crane-lift.jpg",
    ar:{t:"رفع الجوائز الرئيسية", c:"أعمال الموقع", d:"عملية رفع منظمة بخطة تحميل واضحة وتثبيت مؤقت قبل الشد النهائي."},
    en:{t:"Primary beam lift", c:"Site works", d:"Controlled lift with a clear load plan and temporary bracing before final bolting."},
-   loc:"[الموقع]", locEn:"[Location]", year:"[السنة]", yearEn:"[Year]",
    sv:["تركيب","تخطيط الرفع"], svEn:["Erection","Lift planning"]},
 
   {id:"p4", cls:"pj--d", img:"p-erect-boom.jpg",
    ar:{t:"تركيب الإطار الرئيسي", c:"هياكل إنشائية", d:"تركيب الجوائز العلوية باستخدام رافعات ومنصات عمل متحركة."},
    en:{t:"Main frame installation", c:"Structural steel", d:"Top beam installation using cranes and mobile elevating work platforms."},
-   loc:"[الموقع]", locEn:"[Location]", year:"[السنة]", yearEn:"[Year]",
    sv:["تركيب","هندسة"], svEn:["Erection","Engineering"]},
 
   {id:"p5", cls:"pj--e", img:"p-site-wide.jpg",
    ar:{t:"إدارة الموقع", c:"تنفيذ", d:"تنسيق بين فرق الرفع والتركيب داخل منطقة عمل واحدة."},
    en:{t:"Site coordination", c:"Execution", d:"Lifting and installation crews coordinated inside one working zone."},
-   loc:"[الموقع]", locEn:"[Location]", year:"[السنة]", yearEn:"[Year]",
    sv:["تركيب","سلامة"], svEn:["Erection","Safety"]},
 
   {id:"p6", cls:"pj--f", img:"p-frame-square.jpg",
    ar:{t:"سقف هيكل حديدي", c:"هياكل واسعة البحر", d:"شبكة مرابط وجوائز سقف منفّذة بمسافات منتظمة ووصلات مطابقة للرسم."},
    en:{t:"Steel roof structure", c:"Wide-span frames", d:"Purlin and rafter grid executed at regular spacing with connections matching the drawings."},
-   loc:"[الموقع]", locEn:"[Location]", year:"[السنة]", yearEn:"[Year]",
    sv:["تصنيع","تركيب"], svEn:["Fabrication","Erection"]},
 
   {id:"p7", cls:"pj--g", img:"p-crane-columns.jpg",
    ar:{t:"تركيب الأعمدة", c:"أعمال الموقع", d:"محاذاة الأعمدة وتثبيتها على القواعد الخرسانية."},
    en:{t:"Column installation", c:"Site works", d:"Columns aligned and anchored onto concrete foundations."},
-   loc:"[الموقع]", locEn:"[Location]", year:"[السنة]", yearEn:"[Year]",
    sv:["تركيب","فحص"], svEn:["Erection","Inspection"]},
 
   {id:"p8", cls:"pj--h", img:"p-yard.jpg",
    ar:{t:"النقل والتسليم", c:"لوجستيات", d:"شحن القطاعات المصنّعة من الورشة إلى الموقع حسب جدول التركيب."},
    en:{t:"Transport and delivery", c:"Logistics", d:"Fabricated sections shipped from the workshop to site on the erection schedule."},
-   loc:"[الموقع]", locEn:"[Location]", year:"[السنة]", yearEn:"[Year]",
    sv:["نقل","تسليم"], svEn:["Transport","Delivery"]}
 ];
 
@@ -1230,7 +1230,7 @@ var I18N = {
     "svc.5.t":"التكسية المعدنية","svc.5.d":"أعمال Cladding وتفاصيل الواجهات والملحقات.",
     "svc.6.t":"الأعمال المدنية","svc.6.d":"حفر وردم ودك وتجهيز المواقع وتشغيل المعدات.",
     "pj.eyebrow":"المشاريع","pj.title":"أعمالنا على الأرض.",
-    "pj.loc":"الموقع","pj.year":"السنة","pj.services":"الخدمات المنفّذة",
+    "pj.services":"الخدمات المنفّذة",
     "cur.title":"المشاريع",
     "sp.project":"المشروع","sp.loc":"الموقع","sp.area":"المساحة","sp.dur":"المدة",
     "cur.1.t":"مشروع كيزاد — KIZAD","cur.1.l":"كيزاد، أبوظبي","cur.1.a":"35,000 م²","cur.1.p":"—","cur.1.d":"تنفيذ وتركيب الهيكل المعدني.",
@@ -1291,7 +1291,7 @@ var I18N = {
     "svc.5.t":"Cladding","svc.5.d":"Metal cladding, facade details and accessories.",
     "svc.6.t":"Civil works","svc.6.d":"Excavation, backfill, compaction and site preparation.",
     "pj.eyebrow":"Projects","pj.title":"Our work on the ground.",
-    "pj.loc":"Location","pj.year":"Year","pj.services":"Services involved",
+    "pj.services":"Services involved",
     "cur.title":"Projects",
     "sp.project":"Project","sp.loc":"Location","sp.area":"Area","sp.dur":"Duration",
     "cur.1.t":"KIZAD Project","cur.1.l":"KIZAD, Abu Dhabi","cur.1.a":"35,000 m²","cur.1.p":"—","cur.1.d":"Execution and erection of the steel structure.",
@@ -1375,8 +1375,6 @@ function openModal(id){
   var c=p[lang];
   $("#mImg").src=p.img; $("#mImg").alt=c.t;
   $("#mCat").textContent=c.c; $("#mTitle").textContent=c.t; $("#mDesc").textContent=c.d;
-  $("#mLoc").textContent=(lang==="ar")?p.loc:p.locEn;
-  $("#mYear").textContent=(lang==="ar")?p.year:p.yearEn;
   var t=(lang==="ar")?p.sv:p.svEn;
   $("#mTags").innerHTML=t.map(function(x){return '<span class="chip">'+x+'</span>'}).join("");
   lastFocus=document.activeElement;
@@ -1493,6 +1491,34 @@ $("#sendBtn").addEventListener("click",function(){
   $("#ok").classList.add("on");
 });
 
+/* ---------- light 3D tilt (pointer devices only) ---------- */
+(function(){
+  if(reduce) return;
+  if(!window.matchMedia("(hover:hover) and (pointer:fine)").matches) return;
+  function tiltOn(container,selector,max){
+    if(!container) return;
+    var cur=null;
+    function reset(el){ if(!el) return; el.classList.add("tilt--settle"); el.style.transform=""; }
+    container.addEventListener("pointermove",function(e){
+      var el=e.target.closest?e.target.closest(selector):null;
+      if(el && container.contains(el)){
+        el.classList.add("tilt"); el.classList.remove("tilt--settle");
+        if(cur && cur!==el) reset(cur);
+        cur=el;
+        var r=el.getBoundingClientRect();
+        var px=(e.clientX-r.left)/r.width, py=(e.clientY-r.top)/r.height;
+        var ry=(px-0.5)*max, rx=(0.5-py)*max;
+        el.style.transform="perspective(900px) rotateX("+rx.toFixed(2)+"deg) rotateY("+ry.toFixed(2)+"deg) translateY(-2px)";
+      } else if(cur){ reset(cur); cur=null; }
+    });
+    container.addEventListener("pointerleave",function(){ if(cur){ reset(cur); cur=null; } });
+  }
+  tiltOn($("#gal"),".tile",7);
+  tiltOn($(".cells"),".cell",5);
+  var mapCard=$("#mapCard");
+  if(mapCard) tiltOn(mapCard.parentElement,".map",6);
+})();
+
 applyLang("ar");
 observe();
 paint();
@@ -1564,7 +1590,7 @@ body.ed-media [data-m]{outline:2px dashed var(--primary); outline-offset:-2px; c
   <div class="ad-box">
     <h3 data-adt="loginT">لوحة التحكم</h3>
     <span class="mono">STEEL BUILDER · ADMIN</span>
-    <div class="ad-f"><label class="mono" for="adEmail">EMAIL</label><input id="adEmail" type="email" autocomplete="username" placeholder="ahmed.k@steelbuilderuae.com"></div>
+    <div class="ad-f"><label class="mono" for="adEmail">EMAIL</label><input id="adEmail" type="email" autocomplete="username" placeholder="you@steelbuilderuae.com"></div>
     <div class="ad-f"><label class="mono" for="adPass">PASSWORD</label><input id="adPass" type="password" autocomplete="current-password"></div>
     <p class="ad-err" id="adErr"></p>
     <div class="ad-row">
