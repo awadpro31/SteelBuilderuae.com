@@ -110,12 +110,14 @@ def frame(src, t, size=None):
     return p
 
 
+import sys
+ONLY = set(sys.argv[1:])
 if __name__ == "__main__":
     # R1 — From Sand to Steel (hero reel, ~29s)
     p = [
         segment("r1a", V["grading"], 1.0, 3.6, layer("r1a", "DAY ONE", ["IT STARTS", "~WITH SAND."], "كل شيء يبدأ من الرمل", size=112), title_in=0.15),
         segment("r1b", V["excavation"], 1.0, 3.6, layer("r1b", "CIVIL WORKS", ["DIG. LEVEL.", "~COMPACT."], "حفر — تسوية — دك")),
-        segment("r1c", V["lift"], 4.0, 6.0, layer("r1c", "STEEL ERECTION", ["THEN THE", "~STEEL ARRIVES."], "ثم يبدأ تركيب الهيكل المعدني")),
+        segment("r1c", V["lift"], 3.5, 6.0, layer("r1c", "STEEL ERECTION", ["THEN THE", "~STEEL ARRIVES."], "ثم يبدأ تركيب الهيكل المعدني")),
         segment("r1d", V["height"], 2.0, 5.5, layer("r1d", "ON SITE", ["PRECISION", "~AT HEIGHT."], "الدقة على ارتفاع")),
         segment("r1e", V["wide"], 0.0, 6.0, layer("r1e", "STEEL BUILDER", ["FROM SAND", "~TO STEEL."], "من الرمل إلى الهيكل المعدني", size=112), landscape=True),
         endcard(),
@@ -125,7 +127,8 @@ if __name__ == "__main__":
 
     # R2 — The Lift (~20s)
     p = [segment("r2a", V["lift"], 0.0, 5.0, layer("r2a", "WATCH THIS", ["ONE LIFT.", "~ZERO GUESSWORK."], "رفعة واحدة — بلا تخمين", size=108), title_in=0.1),
-         segment("r2b", V["lift"], 5.0, 11.0, layer("r2b", wm=True)),
+         segment("r2b", V["lift"], 5.0, 4.6, layer("r2b", wm=True)),
+         segment("r2c", V["lift"], 11.0, 5.0, layer("r2c", wm=True), title_in=0.0),  # skips 9.6-11.0s: hand over lens in source
          endcard()]
     concat("reel-02-the-lift", p)
     cover_image("reel-02", posts.P["crane"], "THE LIFT", ["ONE LIFT.", "~ZERO GUESSWORK."], "رفعة واحدة — بلا تخمين", (0.5, 0.45))
