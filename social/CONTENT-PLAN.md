@@ -22,6 +22,8 @@ Re-render after editing text: `cd social/_build && python3 posts.py && python3 r
 
 ## 1. Profile setup
 
+**Handle:** `@steelbuilderuae` (Instagram + TikTok — the website still links `@steel_builderr`; update it)
+
 **Name field (IG):** `Steel Builder | ستيل بيلدر — Steel Structures UAE`
 (the name field is searchable — keep "Steel Structures UAE" in it)
 
@@ -42,7 +44,7 @@ WhatsApp +971 50 233 2844
 ```
 Switch TikTok to a **Business account** (category: Construction) to unlock the website link and analytics.
 
-**Highlights (in order):** Projects · On Site · Services · About · Contact → covers in `highlight-covers/`.
+**Highlights (in order):** Projects · Services · On Site · About · WhatsApp · Location · Call · Email · Website → covers in `highlight-covers/`, the stories for each in `highlight-stories/`.
 
 ---
 

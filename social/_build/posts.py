@@ -128,7 +128,7 @@ def carousel():
         im = base(P[k], FEED, fo)
         headline(im, eb, ln, ar, FEED[1] - 130)
         d = ImageDraw.Draw(im)
-        text(d, (64, FEED[1] - 70), "@STEEL_BUILDERR", font("med", 24), fill=(255, 255, 255, 200), anchor="lm", spacing=3)
+        text(d, (64, FEED[1] - 70), "@STEELBUILDERUAE", font("med", 24), fill=(255, 255, 255, 200), anchor="lm", spacing=3)
         counter(d, i)
         watermark(im, w=170)
         save(im, os.path.join(out, f"{i:02d}-{k}.jpg"))

@@ -130,7 +130,7 @@ def eyebrow(d, x, y, s, color=ORANGE, size=26, rtl=False, right=False, label=(23
         text(d, (x + 70, y), s, f, fill=label, anchor="lm", spacing=6)
 
 
-def footer_bar(img, handle="@steel_builderr", site="steelbuilderuae.com", y=None):
+def footer_bar(img, handle="@steelbuilderuae", site="steelbuilderuae.com", y=None):
     W, H = img.size
     d = ImageDraw.Draw(img)
     y = H - 70 if y is None else y
