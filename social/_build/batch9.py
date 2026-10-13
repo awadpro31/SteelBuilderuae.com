@@ -39,10 +39,9 @@ def build():
     wav = os.path.join(reels.TMP, "score.wav")
     music.track(total, hits, wav, end_at=end_at)
     out = os.path.join(reels.OUT, "reel-19-process-ground-to-steel.mp4")
-    # site sound kept low under the score (texture), score carries the reel
+    # score only: site audio (phone-mic wind noise) is dropped; clean gain + transparent peak limiter, no loudnorm pumping
     subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", silent, "-i", wav, "-filter_complex",
-                    "[0:a]volume=0.18[s];[1:a]volume=1.0[m];[s][m]amix=inputs=2:duration=first:normalize=0,"
-                    "loudnorm=I=-14:TP=-1.5:LRA=9[a]",
+                    "[1:a]atrim=0:%.3f,volume=1.6,alimiter=limit=0.89:attack=5:release=80:level=false[a]" % total,
                     "-map", "0:v", "-map", "[a]", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
                     "-movflags", "+faststart", out], check=True)
     os.remove(silent)

@@ -1,159 +1,147 @@
 """Original, royalty-free soundtrack synthesised from scratch (no samples, no third-party audio).
-Cinematic-industrial: A-minor pad, pulsing bass, drums, risers into each chapter, impacts on cuts."""
+v2 — clean mix: no saturation/clipping anywhere, soft-attack pads, sine bass, piano-like arpeggio,
+gentle filtered drums, -3 dBFS peak headroom. (v1 used tanh soft-clip + square-ish bass = audible distortion.)"""
 import numpy as np, wave
+from scipy.signal import lfilter, butter
 
 SR = 44100
-BPM = 100
+BPM = 96
 BEAT = 60 / BPM
+BAR = 4 * BEAT
 rng = np.random.default_rng(11)
 
 
-def env(n, a=0.01, r=0.2):
+def lp(x, fc, order=2):
+    b, a = butter(order, fc / (SR / 2), "low"); return lfilter(b, a, x)
+
+
+def hp(x, fc, order=2):
+    b, a = butter(order, fc / (SR / 2), "high"); return lfilter(b, a, x)
+
+
+def adsr(n, a, d, s, r):
+    t = np.arange(n) / SR; dur = n / SR
+    e = np.where(t < a, t / a, np.where(t < a + d, 1 - (1 - s) * (t - a) / d, s))
+    return e * np.clip((dur - t) / r, 0, 1)
+
+
+def tone(f, n, harmonics=((1, 1.0),)):
     t = np.arange(n) / SR
-    e = np.minimum(1, t / max(a, 1e-4))
-    rel = np.clip((n / SR - t) / max(r, 1e-4), 0, 1)
-    return e * rel
+    return sum(g * np.sin(2 * np.pi * f * h * t) for h, g in harmonics)
 
 
-def osc_saw(f, n, detune=0.0):
+# A minor: Am – F – C – G
+CHORDS = [(220.00, 261.63, 329.63), (174.61, 220.00, 261.63), (261.63, 329.63, 392.00), (196.00, 246.94, 293.66)]
+BASS = [55.0, 43.65, 65.41, 49.0]
+
+
+def pad(chord, n):
+    x = sum(tone(f, n, ((1, 1.0), (2, 0.25), (3, 0.08))) for f in chord) / 3
+    x2 = sum(tone(f * 1.003, n, ((1, 1.0), (2, 0.2))) for f in chord) / 3   # slight detune = width
+    return lp(x, 2200), lp(x2, 2200)
+
+
+def piano(f, n):
+    x = tone(f, n, ((1, 1.0), (2, 0.35), (3, 0.12), (4, 0.05)))
+    return x * adsr(n, 0.004, 0.25, 0.25, 0.25) * np.exp(-np.arange(n) / SR * 2.2)
+
+
+def kick(n=int(0.40 * SR)):
     t = np.arange(n) / SR
-    out = np.zeros(n)
-    for d in (-detune, 0, detune):
-        ph = (t * f * (1 + d)) % 1.0
-        out += 2 * ph - 1
-    return out / 3
+    f = 48 + 70 * np.exp(-t * 30)
+    return np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t * 9)
 
 
-def lowpass(x, cutoff):
-    a = np.exp(-2 * np.pi * cutoff / SR)
-    y = np.empty_like(x); acc = 0.0
-    for i, v in enumerate(x):  # one-pole, fine for short buffers
-        acc = (1 - a) * v + a * acc; y[i] = acc
+def snare(n=int(0.22 * SR)):          # soft clap: band-limited noise, short
+    t = np.arange(n) / SR
+    noise = hp(lp(rng.normal(0, 1, n), 4500), 900)
+    return noise * np.exp(-t * 22) * 0.6
+
+
+def hat(n=int(0.05 * SR)):
+    t = np.arange(n) / SR
+    return lp(hp(rng.normal(0, 1, n), 7000), 11000) * np.exp(-t * 80) * 0.5
+
+
+def swell(n):                          # smooth riser: filtered noise + rising sine, no harsh steps
+    t = np.arange(n) / SR; p = t / t[-1]
+    noise = lp(hp(rng.normal(0, 1, n), 300), 3500) * p ** 2.2 * 0.25
+    sine = np.sin(2 * np.pi * np.cumsum(220 + 440 * p ** 2) / SR) * p ** 3 * 0.08
+    return noise + sine
+
+
+def hit(n=int(1.8 * SR)):              # cinematic hit kept above 55 Hz so phone speakers don't distort
+    t = np.arange(n) / SR
+    boom = np.sin(2 * np.pi * (60 + 30 * np.exp(-t * 8)) * t) * np.exp(-t * 3.0)
+    air = lp(hp(rng.normal(0, 1, n), 200), 2500) * np.exp(-t * 6) * 0.25
+    return boom * 0.7 + air
+
+
+def echo(x, delay=0.27, fb=0.32, mix=0.28):
+    d = int(delay * SR); y = x.copy()
+    for k in range(1, 5):
+        g = mix * fb ** (k - 1)
+        y[d * k:] += x[:-d * k] * g if d * k < len(x) else 0
     return y
 
 
-def lp_fast(x, cutoff, passes=2):
-    for _ in range(passes):
-        a = np.exp(-2 * np.pi * cutoff / SR)
-        b = np.zeros_like(x); b[0] = x[0] * (1 - a)
-        # vectorised IIR via cumulative trick on blocks
-        from scipy.signal import lfilter
-        x = lfilter([1 - a], [1, -a], x)
-    return x
-
-
-def kick(n=int(0.45 * SR)):
-    t = np.arange(n) / SR
-    f = 50 + 110 * np.exp(-t * 28)
-    ph = 2 * np.pi * np.cumsum(f) / SR
-    return np.sin(ph) * np.exp(-t * 7) * 0.95
-
-
-def snare(n=int(0.3 * SR)):
-    t = np.arange(n) / SR
-    noise = rng.normal(0, 1, n)
-    body = np.sin(2 * np.pi * 190 * t) * np.exp(-t * 25)
-    return (lp_fast(noise, 6000) * np.exp(-t * 16) * 0.55 + body * 0.45)
-
-
-def hat(n=int(0.06 * SR)):
-    t = np.arange(n) / SR
-    noise = rng.normal(0, 1, n)
-    hp = noise - lp_fast(noise, 7000)
-    return hp * np.exp(-t * 70) * 0.22
-
-
-def impact(n=int(2.2 * SR)):
-    t = np.arange(n) / SR
-    boom = np.sin(2 * np.pi * (38 + 40 * np.exp(-t * 6)) * t) * np.exp(-t * 2.2)
-    noise = lp_fast(rng.normal(0, 1, n), 1800) * np.exp(-t * 5) * 0.5
-    return (boom + noise) * 0.9
-
-
-def riser(n):
-    t = np.arange(n) / SR
-    noise = rng.normal(0, 1, n)
-    sweep = np.zeros(n)
-    k = n // 8
-    for i in range(8):  # stepped filter sweep
-        seg = noise[i * k:(i + 1) * k]
-        sweep[i * k:(i + 1) * k] = lp_fast(seg, 400 + i * 900)
-    return sweep * (t / t[-1]) ** 2 * 0.45
-
-
-CHORDS = [  # A minor: Am – F – C – G   (root, third, fifth in Hz)
-    (110.0, 130.81, 164.81), (87.31, 110.0, 130.81), (130.81, 164.81, 196.0), (98.0, 123.47, 146.83)]
-
-
 def track(duration, hits, out_path, end_at=None):
-    """hits: chapter-start times (s) → impact + drum fill; end_at: outro (drums stop, pad rings)."""
     n = int(duration * SR)
-    mix = np.zeros((n, 2))
-    bar = 4 * BEAT
+    L = np.zeros(n); R = np.zeros(n)
     end_at = end_at or duration
-    # pad: detuned saws, low-passed, one chord per bar
-    t0 = 0.0; ci = 0
-    while t0 < duration:
-        m = min(int(bar * SR), n - int(t0 * SR))
-        if m <= 0:
-            break
-        root, third, fifth = CHORDS[ci % 4]
-        pad = sum(osc_saw(f * 2, m, 0.004) for f in (root, third, fifth)) / 3
-        pad = lp_fast(pad, 900) * env(m, 0.4, 0.4) * 0.22
-        s = int(t0 * SR)
-        mix[s:s + m, 0] += pad; mix[s:s + m, 1] += np.roll(pad, 220)
-        # bass: 8th-note pulse on chord root (only after intro)
-        if t0 >= bar * 0.5 and t0 < end_at:
-            step = BEAT / 2
-            for k in range(8):
-                bs = int((t0 + k * step) * SR); bn = int(step * 0.9 * SR)
-                if bs + bn > n or (t0 + k * step) >= end_at:
-                    break
-                b = np.sin(2 * np.pi * root / 2 * np.arange(bn) / SR)
-                b += 0.35 * np.sign(b)
-                b = lp_fast(b, 380) * env(bn, 0.005, 0.08) * 0.32
-                mix[bs:bs + bn] += b[:, None]
-        t0 += bar; ci += 1
-    # drums from first hit until outro
-    start = hits[0] + bar if len(hits) else 2 * bar
-    t = start
-    K, S_, H = kick(), snare(), hat()
+    def add(x, s, gl, gr=None):
+        s = int(s); m = min(len(x), n - s)
+        if m > 0:
+            L[s:s + m] += x[:m] * gl; R[s:s + m] += x[:m] * (gl if gr is None else gr)
+    bars = int(np.ceil(duration / BAR))
+    for b in range(bars):
+        t0 = b * BAR; m = int(BAR * SR) + int(0.6 * SR)
+        ch = CHORDS[b % 4]
+        pl, pr = pad(ch, m)
+        e = adsr(m, 0.6, 0.5, 0.8, 0.7)
+        add(pl * e, t0 * SR, 0.10, 0.0); add(pr * e, t0 * SR, 0.0, 0.10)
+        if t0 >= BAR * 0.99 and t0 < end_at:          # arpeggio from bar 2
+            arp = [ch[0] * 2, ch[1] * 2, ch[2] * 2, ch[1] * 2] * 2
+            for k, f in enumerate(arp):
+                tt = t0 + k * BEAT / 2
+                if tt >= end_at: break
+                x = piano(f, int(0.9 * SR))
+                add(x, tt * SR, 0.07 if k % 2 else 0.05, 0.05 if k % 2 else 0.07)
+        if t0 < end_at:                                 # bass: sustained sine root, two hits per bar
+            for k in (0, 2.5):
+                tt = t0 + k * BEAT
+                if tt >= end_at: break
+                bn = int(BEAT * 1.4 * SR)
+                x = tone(BASS[b % 4], bn, ((1, 1.0), (2, 0.15))) * adsr(bn, 0.01, 0.2, 0.7, 0.15)
+                add(lp(x, 400), tt * SR, 0.22)
+    # drums: start after the intro bar, stop at the outro
+    t = hits[1] if len(hits) > 1 else BAR
+    K, Sn, H = kick(), snare(), hat()
     while t < end_at - 0.05:
         for k in range(8):
             tt = t + k * BEAT / 2
-            if tt >= end_at - 0.05:
-                break
-            s = int(tt * SR)
-            def add(x, g=1.0, pan=0.0):
-                m = min(len(x), n - s)
-                if m > 0:
-                    mix[s:s + m, 0] += x[:m] * g * (1 - pan)
-                    mix[s:s + m, 1] += x[:m] * g * (1 + pan)
-            add(H, 1.0, 0.3 if k % 2 else -0.3)
-            if k in (0, 3, 4):
-                add(K, 1.0)
-            if k in (2, 6):
-                add(S_, 0.8)
-        t += bar
-    # risers into each chapter + impacts on the cut
-    for h in list(hits) + [end_at]:
-        rn = int(1.6 * SR); rs = int(h * SR) - rn
-        if rs > 0:
-            r = riser(rn); mix[rs:rs + rn, 0] += r; mix[rs:rs + rn, 1] += r[::-1] * 0.9 + r * 0.1
-        im = impact(); s = int(h * SR); m = min(len(im), n - s)
-        if m > 0:
-            mix[s:s + m] += im[:m, None] * 0.8
-    # master: soft clip, fades, normalise
-    fade = int(1.5 * SR)
-    mix[-fade:] *= np.linspace(1, 0, fade)[:, None]
-    mix[:int(0.3 * SR)] *= np.linspace(0, 1, int(0.3 * SR))[:, None]
-    mix = np.tanh(mix * 1.3)
-    mix /= np.max(np.abs(mix)) * 1.05
-    data = (mix * 32767).astype(np.int16)
+            if tt >= end_at - 0.05: break
+            add(H, tt * SR, 0.10 if k % 2 else 0.06, 0.06 if k % 2 else 0.10)
+            if k in (0, 4): add(K, tt * SR, 0.45)
+            if k in (2, 6): add(Sn, tt * SR, 0.20)
+        t += BAR
+    # swells into each chapter + clean hit on the cut
+    for h in list(hits[1:]) + [end_at]:
+        sn = int(1.4 * SR)
+        add(swell(sn), h * SR - sn, 0.9, 0.9)
+        add(hit(), h * SR, 0.55)
+    L, R = echo(L), echo(R, delay=0.31)
+    L, R = hp(L, 30), hp(R, 30)                        # remove sub rumble
+    fade = int(1.8 * SR)
+    for ch in (L, R):
+        ch[-fade:] *= np.linspace(1, 0, fade); ch[:int(0.4 * SR)] *= np.linspace(0, 1, int(0.4 * SR))
+    mix = np.stack([L, R], 1)
+    mix *= 10 ** (-3 / 20) / np.max(np.abs(mix))       # peak at -3 dBFS, linear (no clipping)
     with wave.open(out_path, "wb") as w:
-        w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR); w.writeframes(data.tobytes())
+        w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR)
+        w.writeframes((mix * 32767).astype(np.int16).tobytes())
     return out_path
 
 
 if __name__ == "__main__":
-    track(20, [0.0, 5.0, 10.0, 15.0], "/tmp/music-test.wav")
+    track(20, [0.0, 5.0, 10.0, 15.0], "/tmp/music-test.wav", end_at=17)
