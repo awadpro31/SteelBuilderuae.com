@@ -1,5 +1,5 @@
 """Batch 11: Dubai Industrial City pour — night pour → next-morning pads. Enhanced footage
-(deshake, denoise, exposure/colour, sharpen — see *-clean files), cinematic shots from the 3 photos,
+(vidstab two-pass stabilisation, denoise, exposure/colour, sharpen — see *-stab files), cinematic shots from the 3 photos,
 120 BPM beat-synced cut with the music2 score."""
 import os, subprocess
 from brand import *
@@ -18,12 +18,13 @@ SHOTS = [("b11-pad-close", S("19.jpg"), (0.45, 0.62, 1.04, 0), (0.45, 0.54, 1.30
          ("b11-pads-forms", S("18.jpg"), (0.50, 0.66, 1.12, 0), (0.50, 0.52, 1.24, 0), False, False)]
 
 PLAN = [  # name, src, start, beats, landscape, eyebrow, lines, arabic
-    ("n1", S("v11-night-clean.mp4"), 10.2, 8, True, "DUBAI INDUSTRIAL CITY", ["NIGHT", "~POUR."], "صبّة ليلية — دبي الصناعية"),
-    ("n2", S("v11-night-clean.mp4"), 0.0, 8, True, None, None, None),
-    ("n3", S("v11-night-clean.mp4"), 14.2, 4, True, None, None, None),
-    ("m1", S("v11-pads-walk-clean.mp4"), 0.0, 12, False, "THE NEXT MORNING", ["PADS", "~POURED."], "الصبح — القواعد مصبوبة"),
+    # v2: vidstab-stabilised sources; only the steady windows of the night clip (3-11 s is whip pans);
+    # the handheld walk clip is replaced by a locked-off cinematic shot.
+    ("n1", S("v11-night-stab.mp4"), 11.0, 10, True, "DUBAI INDUSTRIAL CITY", ["NIGHT", "~POUR."], "صبّة ليلية — دبي الصناعية"),
+    ("n2", S("v11-night-spray-slow.mp4"), 0.0, 6, True, None, None, None),
+    ("m1", "shot:b11-pads-forms", 0.25, 8, False, "THE NEXT MORNING", ["PADS", "~POURED."], "الصبح — القواعد مصبوبة"),
     ("m2", "shot:b11-pad-close", 0.25, 8, False, None, None, None),
-    ("m3", S("v11-pads-day-clean.mp4"), 0.0, 10, False, "STEEL BUILDER", ["READY", "~FOR STEEL."], "جاهزة لتركيب الحديد"),
+    ("m3", S("v11-pads-day-stab.mp4"), 0.3, 10, False, "STEEL BUILDER", ["READY", "~FOR STEEL."], "جاهزة لتركيب الحديد"),
     ("m4", "shot:b11-pads-row", 0.25, 6, False, None, None, None),
 ]
 
