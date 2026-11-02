@@ -1,6 +1,6 @@
 """Batch 16: Saih Shuaib project — two reels, no music (silent track; sound is added in-app if wanted).
 A: foundations (formwork, rebar, pad pour). B: steel erection (crane lifts, frames, bolting at height).
-Phone clips are vidstab-stabilised (*-stab files) and cut to their steady windows; the night clip was left out
+Phone clips: steady windows only, stabilised + upscaled by sbstab (v16w-* files); the night clip was left out
 (camera date/GPS stamp burnt in). Frames showing third-party names (container line, crane hire) are avoided."""
 import os, subprocess
 from brand import *
@@ -12,28 +12,43 @@ OUT = os.path.join(os.path.dirname(HERE), "batch-16")
 reels.OUT = os.path.join(OUT, "reels")
 cine.SHOTS = os.path.join(OUT, "cinematic-shots")
 S = lambda f: os.path.join(SRC, f)
-V = lambda i: S(f"v16-ss-{i}-stab.mp4")
 
 SHOT = ("b16-pad-pour", S("22.jpg"), (0.50, 0.58, 1.04, 0), (0.50, 0.50, 1.24, 0), False, False)
 BOLT = S("v16-bolting-push.mp4")      # landscape photo 23.jpg -> slow push clip
 
 PROJECT = "SAIH SHUAIB PROJECT"
+# v2: only windows with low measured hand-shake (walking shots dropped), each stabilised and upscaled in one
+# resample by sbstab (the first version's vidstab + crop + rescale chain left shake and softened the 480p clips)
+WINDOWS = {  # clip name: (source, start, dur)
+    "w-forms-worker": (S("v16-ss-3.mov"), 8.0, 3.6),
+    "w-forms-row": (S("v16-ss-1.mov"), 42.0, 3.6),
+    "w-pour": (S("v16-ss-2.mov"), 0.3, 3.7),
+    "w-manlift": (S("v16-ss-4.mov"), 0.0, 3.1),
+    "w-crane-lift": (S("v16-ss-4.mov"), 3.0, 5.1),
+    "w-frames": (S("v16-ss-6.mov"), 4.0, 4.1),
+}
+CLIP = lambda k: os.path.join(SRC, "v16w-" + k + ".mp4")
+
 REELS = {
     "reel-25-saih-shuaib-foundations": [  # name, src, start, dur, landscape, eyebrow, lines, arabic
-        ("a1", V(3), 0.5, 4.0, False, PROJECT, ["FOUNDATIONS", "~TAKING SHAPE."], "مشروع سيح شعيب — الأساسات"),
-        ("a2", V(1), 11.0, 3.0, False, None, None, None),
-        ("a3", V(1), 42.3, 3.5, False, None, None, None),
-        ("a4", V(2), 0.3, 3.5, False, "CONCRETE", ["PADS", "~POURED."], "صبّ القواعد"),
-        ("a5", "shot", 0.25, 4.0, False, "STEEL BUILDER", ["BUILT FROM", "~THE GROUND UP."], "نبني من الأساس"),
+        ("a1", CLIP("w-forms-worker"), 0.0, 3.5, False, PROJECT, ["FOUNDATIONS", "~TAKING SHAPE."], "مشروع سيح شعيب — الأساسات"),
+        ("a2", CLIP("w-forms-row"), 0.0, 3.5, False, None, None, None),
+        ("a3", CLIP("w-pour"), 0.0, 3.6, False, "CONCRETE", ["PADS", "~POURED."], "صبّ القواعد"),
+        ("a4", "shot", 0.25, 4.5, False, "STEEL BUILDER", ["BUILT FROM", "~THE GROUND UP."], "نبني من الأساس"),
     ],
     "reel-26-saih-shuaib-steel-erection": [
-        ("b1", V(4), 0.0, 2.0, False, PROJECT, ["STEEL", "~ERECTION."], "مشروع سيح شعيب — تركيب الهيكل"),
-        ("b2", V(4), 11.8, 4.5, False, None, None, None),
-        ("b3", V(6), 3.8, 3.5, False, "FRAMES", ["RAFTERS", "~IN PLACE."], "الجسور في مكانها"),
-        ("b5", V(6), 14.8, 1.7, False, None, None, None),
-        ("b6", BOLT, 0.2, 4.0, True, "STEEL BUILDER", ["BOLTED", "~AT HEIGHT."], "تربيط على ارتفاع"),
+        ("b1", CLIP("w-manlift"), 0.0, 3.0, False, PROJECT, ["STEEL", "~ERECTION."], "مشروع سيح شعيب — تركيب الهيكل"),
+        ("b2", CLIP("w-crane-lift"), 0.0, 5.0, False, None, None, None),
+        ("b3", CLIP("w-frames"), 0.0, 4.0, False, "FRAMES", ["RAFTERS", "~IN PLACE."], "الجسور في مكانها"),
+        ("b4", BOLT, 0.2, 4.5, True, "STEEL BUILDER", ["BOLTED", "~AT HEIGHT."], "تربيط على ارتفاع"),
     ],
 }
+
+
+def prep_windows():
+    import sbstab
+    for k, (src, ss, dur) in WINDOWS.items():
+        print(k, sbstab.stabilise(src, ss, dur, CLIP(k), sharpen=0.3))
 
 
 def prep():
@@ -68,8 +83,9 @@ def covers():
 
 if __name__ == "__main__":
     import sys
-    steps = sys.argv[1:] or ["prep", "reels", "covers"]
+    steps = sys.argv[1:] or ["prep", "windows", "reels", "covers"]
     if "prep" in steps: prep()
+    if "windows" in steps: prep_windows()
     if "reels" in steps:
         for k, p in REELS.items(): print(build(k, p))
     if "covers" in steps: covers()
